@@ -104,6 +104,27 @@ async function run() {
             res.send({ message: 'updated successfully' });
         })
 
+        app.patch('/codeUpdate', async (req, res) => {
+            const { month } = req.query
+            const { vs_code, hs_code, Ac_NO } = req.body
+            // console.log(hs_code, vs_code, Ac_NO)
+            const query = { Ac_NO: Ac_NO }
+            const updateDoc = {
+                $set: {
+                    H_S_Code: hs_code,
+                    V_S_Code: vs_code
+                },
+            };
+            const monthCollection = database.collection(`${month}`)
+
+            const result1 = await monthCollection.updateOne(query, updateDoc)
+            const result2 = await allDataCollection.updateOne(query, updateDoc)
+            res.send(result1)
+
+
+
+        })
+
 
 
         // Send a ping to confirm a successful connection
