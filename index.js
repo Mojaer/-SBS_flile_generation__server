@@ -8,7 +8,9 @@ app.use(express.json());
 app.use(cors());
 require('dotenv').config()
 
-
+//data codes 
+const H_S_Codes = ['12901', '12902', '12903', '12904', '12905', '12906', '12907', '12908', '12909', '12910', '12911', '12912', '12913']
+const V_S_Codes = ['12110', '12120', '12500', '12210', '12220', '12230', '12240', '12250', '12330', '12340', '12350', '12360', '12370', '12380', '12390']
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_ACC}:${process.env.DB_PASS}@cluster0.8odccbh.mongodb.net/?retryWrites=true&w=majority`;
@@ -25,7 +27,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
 
         const database = client.db("PGDIT_project");
         const allDataCollection = database.collection("allData");
@@ -120,11 +122,36 @@ async function run() {
             const result1 = await monthCollection.updateOne(query, updateDoc)
             const result2 = await allDataCollection.updateOne(query, updateDoc)
             res.send(result1)
-
-
-
         })
 
+        //sbs_data collection 
+        app.get('/sbs_data', async (req, res) => {
+            const { month } = (req.query)
+            const monthCollection = database.collection(`${month}`)
+            const monthlyData = await monthCollection.find().toArray()
+            // console.log(data)
+            const SBS_fileData = []
+            H_S_Codes.map((HS) => {
+                const codesData = { code: HS }
+                const H_S_data = monthlyData.filter((data) => data.H_S_Code === codesData.code)
+                // console.log(H_S_data)
+                V_S_Codes.map(code => {
+                    const data = H_S_data.filter(data => parseInt(data.V_S_Code) === parseInt(code))
+                    // console.log(data)
+                    const sum = data.reduce((sum, each) => {
+                        return sum + parseFloat(each.Amount)
+                    }, 0)
+                    const key = `s${code}s`
+                    codesData[key] = sum.toFixed(2)
+
+                })
+                // console.log(codesData)
+                SBS_fileData.push(codesData)
+            })
+
+            res.status(200).send({ data: SBS_fileData })
+
+        })
 
 
         // Send a ping to confirm a successful connection
