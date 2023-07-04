@@ -31,11 +31,12 @@ async function run() {
 
         const database = client.db("PGDIT_project");
         const allDataCollection = database.collection("allData");
-        // data saved to collection and the specified collection month
+        // data saved to collection and the specified collection month route 1
         app.post('/accdata', async (req, res) => {
             const data = req.body;
             // console.log(data.data.length);
-            const month = data.month
+            const { month } = req.query
+            // console.log(month);
             const monthCollection = database.collection(`${month}`)
             data.data.map(async (data) => {
                 const Acc = {
@@ -52,16 +53,17 @@ async function run() {
             })
 
             //search for the data collection to be previously inserted
-            const previousData = await monthCollection.find().toArray()
-            if (previousData.length != 0) {
-                res.send({ message: 'You have already inserted the file' })
-            }
-            else {
-                const result2 = await monthCollection.insertMany(data.data)
-                res.send(result2)
-                // console.log(result2)
-            }
+            // const previousData = await monthCollection.find().toArray()
+            // if (previousData.length != 0) {
+            //     res.send({ message: 'You have already inserted the file' })
+            // }
+            // else {}
+            const result2 = await monthCollection.insertMany(data.data)
+            res.status(200).send(result2)
+            // console.log(result2)
+
         })
+
 
         // request to add all daa
         app.get('/allData', async (req, res) => {
@@ -121,7 +123,7 @@ async function run() {
 
             const result1 = await monthCollection.updateOne(query, updateDoc)
             const result2 = await allDataCollection.updateOne(query, updateDoc)
-            res.send(result1)
+            res.status(200).send(result1)
         })
 
         //sbs_data collection 
@@ -129,11 +131,11 @@ async function run() {
             const { month } = (req.query)
             const monthCollection = database.collection(`${month}`)
             const monthlyData = await monthCollection.find().toArray()
-            // console.log(data)
+            // console.log(monthlyData)
             const SBS_fileData = []
             H_S_Codes.map((HS) => {
                 const codesData = { code: HS }
-                const H_S_data = monthlyData.filter((data) => data.H_S_Code === codesData.code)
+                const H_S_data = monthlyData.filter((data) => parseInt(data.H_S_Code) === parseInt(codesData.code))
                 // console.log(H_S_data)
                 V_S_Codes.map(code => {
                     const data = H_S_data.filter(data => parseInt(data.V_S_Code) === parseInt(code))
