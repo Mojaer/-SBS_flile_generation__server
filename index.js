@@ -70,22 +70,36 @@ async function run() {
             const result = await allDataCollection.find().toArray()
             res.status(200).send(result)
         })
+
         // to get monthly the data form the data collection
         app.get('/data', async (req, res) => {
             const month = req.query
             const monthCollection = database.collection(`${month.month}`)
             const result = await monthCollection.find().toArray()
             if (result.length === 0) {
-                res.status(404).json({ error: true, message: 'Data ss Not Found For This Month' })
+                res.status(404).json({ error: true, message: 'Data is Not Found For This Month' })
             } else {
                 res.status(200).send({ error: false, data: result })
             }
         })
 
+
+        // to delete the data of the month
+        app.delete('/data', async (req, res) => {
+            const { month } = req.query
+            // console.log(month)
+            const monthCollection = database.collection(`${month}`)
+            const result = await monthCollection.deleteMany()
+            res.status(200).send(result)
+
+        })
+
+
         // update the codes from the previous collection
         app.patch('/data', async (req, res) => {
             const { month } = req.query
             const { data } = req.body
+            const monthCollection = database.collection(`${month}`)
             // console.log(data.length)
             data.map(async (item, index) => {
                 const query = { Ac_NO: item.Ac_NO }
@@ -97,15 +111,15 @@ async function run() {
                         V_S_Code: dataFromCollection.V_S_Code || '---'
                     },
                 };
-                const monthCollection = database.collection(`${month}`)
+
                 if (monthCollection) {
                     const filter = { _id: new ObjectId(item._id) }
                     const result = await monthCollection.updateOne(filter, updateDoc)
-
                 }
-
             })
-            res.send({ message: 'updated successfully' });
+
+            const result = await monthCollection.find().toArray()
+            res.status(200).send({ error: false, data: result });
         })
 
         app.patch('/codeUpdate', async (req, res) => {
